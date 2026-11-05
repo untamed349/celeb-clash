@@ -1217,7 +1217,7 @@ menuDraw=function(){bgUI(760,330);mdesc=null;
  btn(552,28,48,46,'',{col:'dark',icon:muted?'🔇':'🔊',fs:22,id:'mute',fn:tgl});btn(496,28,48,46,'',{col:'dark',icon:document.fullscreenElement?'🗗':'⛶',fs:22,id:'fs',fn:togFS});
  const lv=(SV.xp/100|0)+1,xpi=SV.xp%100,rk=rank();pnl(612,14,330,74,'rgba(10,6,30,.6)','rgba(255,255,255,.18)');
  X.beginPath();X.arc(652,51,27,0,7);const bg2=X.createLinearGradient(0,24,0,78);bg2.addColorStop(0,'#ffe680');bg2.addColorStop(1,'#ff9f1c');X.fillStyle=bg2;X.fill();X.lineWidth=3;X.strokeStyle='#fff';X.stroke();otx(String(lv),652,63,30,'#fff','center','#7a3b00',5);
- tx('You',692,40,17,'#fff');tx(RKI[rk[0]]+' '+rk[0],930,40,15,RKC[rk[0]],'right');rrp(692,50,238,12,6);X.fillStyle='rgba(255,255,255,.14)';X.fill();rrp(692,50,Math.max(12,238*xpi/100),12,6);X.fillStyle='#ffd166';X.fill();tx('Level '+lv+'   '+xpi+' / 100 XP',692,80,12,'#cfc8ff');
+ tx(nameGet().slice(0,14)+'  ✏️',692,40,17,'#fff');HB.push({x:612,y:14,w:330,h:74,id:'pname',fn:nameOpen});tx(RKI[rk[0]]+' '+rk[0],930,40,15,RKC[rk[0]],'right');rrp(692,50,238,12,6);X.fillStyle='rgba(255,255,255,.14)';X.fill();rrp(692,50,Math.max(12,238*xpi/100),12,6);X.fillStyle='#ffd166';X.fill();tx('Level '+lv+'   '+xpi+' / 100 XP',692,80,12,'#cfc8ff');
  const D=mdesc||[MI2[mi][1],MI2[mi][2]];pnl(600,100,342,50,'rgba(10,6,30,.55)','rgba(255,255,255,.15)');X.font='20px Rubik,sans-serif';X.textAlign='left';X.fillStyle='#fff';X.fillText(D[0],614,132);tx(D[1],648,130,13,'#fff');
  const q=((t/240)|0)%2*2;[[q,690],[q+1,870]].forEach(([i,x])=>{pedestal(x,440,CH[i].a=='#ffffff'?'#7ee0ff':CH[i].a);pv(i,x,440,2.2,1);otx(CH[i].n,x,486,22,'#fff','center')})};
 function offlDraw(){hdr('OFFLINE PLAY');OFFL.forEach((m,i)=>{const x=40+(i%3)*300,y=84+(i/3|0)*222,s=ofi==i,id='of'+i;
@@ -1285,8 +1285,31 @@ const _dpa15=drawPA;drawPA=function(){_dpa15();drawFG()};
 if(SET.plx===undefined)SET.plx=1;
 
 
+// ================= MOD16: player name editor =================
+function nameGet(){try{if(window.CCNET)return CCNET.user.name()}catch(e){}return SV.nick||'You'}
+function nameOK(n){n=String(n||'').replace(/[^A-Za-z0-9 _.\-]/g,'').replace(/\s+/g,' ').trim();return n.length>=2?n.slice(0,16):null}
+function nameSet(n){n=nameOK(n);if(!n)return false;SV.nick=n;save();try{if(window.CCNET)CCNET.user.setName(n)}catch(e){}try{lbPush()}catch(e){}return true}
+let NMB=null,NMI=null,NME='';
+function nameOpen(){NMB=st;st='name';NME='';sfx('sel')}
+function nameClose(ok){if(ok){if(!nameSet(NMI.value)){NME='Use 2 to 16 letters or numbers.';sfx('tick');return}FT&&0;sfx('sel')}NMI.blur();NMI.style.display='none';st=NMB&&NMB!='name'?NMB:'menu'}
+function nameInput(){if(NMI)return NMI;NMI=document.createElement('input');NMI.type='text';NMI.maxLength=16;NMI.autocomplete='off';NMI.spellcheck=false;NMI.setAttribute('enterkeyhint','done');
+ Object.assign(NMI.style,{position:'fixed',zIndex:60,display:'none',border:'3px solid #ffd166',borderRadius:'12px',background:'#140a2e',color:'#fff',font:'600 22px Rubik,sans-serif',padding:'0 14px',outline:'none',boxSizing:'border-box',textAlign:'center'});
+ NMI.addEventListener('keydown',e=>{e.stopPropagation();if(e.key=='Enter'){e.preventDefault();nameClose(true)}else if(e.key=='Escape'){e.preventDefault();nameClose(false)}});
+ ['keyup','keypress'].forEach(n=>NMI.addEventListener(n,e=>e.stopPropagation()));NMI.addEventListener('input',()=>{NME=''});document.body.appendChild(NMI);return NMI}
+function namePlace(){const r=C.getBoundingClientRect(),k=r.width/W,x=r.left+(W/2-200)*k,y=r.top+(H/2-52)*k;Object.assign(NMI.style,{left:x+'px',top:y+'px',width:400*k+'px',height:56*k+'px',fontSize:Math.max(14,22*k)+'px'})}
+function nameDraw(){hdr('YOUR NAME',()=>nameClose(false));pnl(W/2-260,H/2-150,520,290,'rgba(10,6,30,.75)','rgba(255,209,102,.45)');
+ X.font='44px Rubik,sans-serif';X.textAlign='center';X.fillText('🎤',W/2,H/2-92);tx('This is how opponents and the leaderboard see you.',W/2,H/2-64,14,'#cfc8ff','center');
+ const i=nameInput();if(i.style.display=='none'){i.value=nameGet()=='You'?'':nameGet();i.style.display='block';setTimeout(()=>{try{i.focus();i.select()}catch(e){}},30)}namePlace();
+ tx(NME||(i.value.length+' / 16  ·  letters, numbers, spaces, - _ .'),W/2,H/2+30,13,NME?'#ff6b6b':'#cfc8ff','center');
+ btn(W/2-200,H/2+56,190,50,'Cancel',{col:'dark',fs:20,id:'nmc',fn:()=>nameClose(false)});btn(W/2+10,H/2+56,190,50,'Save',{col:'gold',icon:'✔',fs:20,id:'nms',fn:()=>nameClose(true)})}
+UI.push('name');
+const _ui16=ui;ui=function(){if(st=='name'){bgUI(W/2,H/2);nameDraw();return}if(NMI&&NMI.style.display!='none')NMI.style.display='none';_ui16()};
+// carry a saved nickname into the web build on load
+try{if(window.CCNET&&SV.nick&&CCNET.user.name()!=SV.nick)CCNET.user.setName(SV.nick)}catch(e){}
+
+
 // ---- standalone web build extras ----
 const _odW=onlineDraw;onlineDraw=function(){_odW();if(!NET.room||!window.CCNET)return;
  if(!NET.room.connected())tx('Connecting to the game server...',284,240,15,'#ffd166','center');
- tx('You: '+CCNET.user.name(),46,508,14,'#e8e2ff');if(!NET.role)btn(400,486,124,30,'Rename',{col:'dark',fs:13,id:'ren',fn:()=>{const n=prompt('Your player name',CCNET.user.name());if(n)CCNET.user.setName(n)}})};
+ tx('You: '+CCNET.user.name(),46,508,14,'#e8e2ff');if(!NET.role)btn(400,486,124,30,'Rename',{col:'dark',fs:13,id:'ren',fn:nameOpen})};
 </script></body></html>
