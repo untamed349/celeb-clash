@@ -24,7 +24,7 @@ function bcast(room,m,except){const r=rooms.get(room);if(!r)return;const s=JSON.
 function leave(ws,room){const r=rooms.get(room);if(!r||!r.has(ws))return;r.delete(ws);delete ws.pres[room];if(!r.size)rooms.delete(room);bcast(room,{t:'gone',room,peer:ws.peer})}
 wss.on('connection',ws=>{ws.peer='k'+(++seq).toString(36)+Math.random().toString(36).slice(2,6);ws.pres={};ws.by=null;ws.name='Player';ws.lb=false;ws.rate=0;
  ws.on('message',buf=>{if(++ws.rate>200)return;let m;try{m=JSON.parse(buf)}catch(e){return}
-  if(m.t=='hello'){ws.by=String(m.id||'').slice(0,40);ws.name=clean(m.name);send(ws,{t:'me',peer:ws.peer})}
+  if(m.t=='hello'){ws.by=String(m.id||'').slice(0,40);ws.name=clean(m.name);send(ws,{t:'me',peer:ws.peer});for(const room of Object.keys(ws.pres))bcast(room,{t:'p',room,peer:ws.peer,by:ws.by,name:ws.name,presence:ws.pres[room]},ws);if(LB[ws.by]&&LB[ws.by].name!==ws.name){LB[ws.by].name=ws.name;saveLB();const rows=top();for(const o of wss.clients)if(o.lb)send(o,{t:'lb',rows})}}
   else if(m.t=='join'&&/^[a-z0-9][a-z0-9_.-]{0,47}$/.test(m.room||'')){let r=rooms.get(m.room);if(!r){if(rooms.size>2000)return;r=new Set();rooms.set(m.room,r)}if(r.size>=64&&!r.has(ws))return send(ws,{t:'full',room:m.room});
    r.add(ws);ws.pres[m.room]=ws.pres[m.room]||{};const peers=[...r].filter(o=>o!==ws).map(o=>({peer:o.peer,by:o.by,name:o.name,presence:o.pres[m.room]||{}}));send(ws,{t:'joined',room:m.room,peers});bcast(m.room,{t:'p',room:m.room,peer:ws.peer,by:ws.by,name:ws.name,presence:ws.pres[m.room]},ws)}
   else if(m.t=='leave')leave(ws,m.room);

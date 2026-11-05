@@ -1308,6 +1308,7 @@ const _ui16=ui;ui=function(){if(st=='name'){bgUI(W/2,H/2);nameDraw();return}if(N
 try{if(window.CCNET&&SV.nick&&CCNET.user.name()!=SV.nick)CCNET.user.setName(SV.nick)}catch(e){}
 
 
+const _nmOfW=nameOf;nameOf=function(p){if(window.CCNET&&p){if(p.isMe||p.by===CCNET.id)return CCNET.user.name();const n=CCNET.names[p.by];if(n)return n}return _nmOfW(p)};
 // ---- standalone web build extras ----
 const _odW=onlineDraw;onlineDraw=function(){_odW();if(!NET.room||!window.CCNET)return;
  if(!NET.room.connected())tx('Connecting to the game server...',284,240,15,'#ffd166','center');

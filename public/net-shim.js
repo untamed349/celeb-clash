@@ -23,5 +23,5 @@
    doc(did){return{async set(d){lastLb=d;if(open)ws.send(JSON.stringify({t:'lb_set',doc:d}))}}}};return q}};
  const user={id:async()=>id,isOwner:async()=>false,canEdit:async()=>false,profiles:async ids=>{const o={};[].concat(ids).forEach(i=>{o[i]={id:i,name:NAMES[i]||'Player',isMe:i===id}});return o},
   me:async()=>({id,name}),setName(n){name=String(n).slice(0,20)||name;NAMES[id]=name;s('cc_name',name);if(open)ws.send(JSON.stringify({t:'hello',id,name}))},name:()=>name};
- window.CCNET={user};connect();const lobby=room('lobby');
+ window.CCNET={user,names:NAMES,id};connect();const lobby=room('lobby');
  window.claude={use:async n=>n=='room'?lobby:n=='db'?db:n=='user'?user:null}})();
