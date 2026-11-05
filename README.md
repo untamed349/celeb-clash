@@ -20,6 +20,16 @@ takes up to a minute to wake. The leaderboard is saved in `leaderboard.json`, wh
 service loses when it restarts or redeploys. Railway, Fly.io and Glitch work the same way
 (build `npm install`, start `node server.js`).
 
+## Keep the leaderboard between deploys (free)
+Render's free plan wipes the server's files on every deploy and restart, so the leaderboard
+needs a small outside database. Upstash Redis has a free plan that is plenty for this.
+1. Sign up at upstash.com and create a **Redis** database (free plan, any region near you).
+2. On the database page, open the **REST API** section and copy `UPSTASH_REDIS_REST_URL`
+   and `UPSTASH_REDIS_REST_TOKEN`.
+3. In Render: open the `celeb-clash` service, then **Environment**, add both variables with
+   those values, and save. Render redeploys automatically.
+4. The deploy log should say `leaderboard: Upstash`. From then on, scores survive every push.
+
 ## Option B — itch.io page + the game server
 1. Deploy the server as in Option A and note its address, e.g. `https://celeb-clash.onrender.com`.
 2. Edit `public/config.js` and set:

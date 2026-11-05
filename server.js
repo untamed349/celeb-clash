@@ -4,8 +4,17 @@ const PORT=process.env.PORT||8080,PUB=path.join(__dirname,'public'),DATA=process
 const TYPES={'.html':'text/html; charset=utf-8','.js':'text/javascript','.png':'image/png','.css':'text/css','.json':'application/json','.woff2':'font/woff2'};
 const server=http.createServer((req,res)=>{let u=decodeURIComponent((req.url||'/').split('?')[0]);if(u=='/')u='/index.html';const f=path.normalize(path.join(PUB,u));
  if(!f.startsWith(PUB)){res.writeHead(403);return res.end()}fs.readFile(f,(e,b)=>{if(e){res.writeHead(404);return res.end('Not found')}res.writeHead(200,{'Content-Type':TYPES[path.extname(f)]||'application/octet-stream','Cache-Control':'no-cache'});res.end(b)})});
+// Leaderboard storage. Render's free disk is wiped on every deploy/restart, so when
+// UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN are set the board is kept in a free
+// Upstash Redis database instead. Without them it falls back to a local file.
+const KV_URL=(process.env.UPSTASH_REDIS_REST_URL||'').replace(/\/$/,''),KV_TOK=process.env.UPSTASH_REDIS_REST_TOKEN||'',KV_KEY=process.env.LB_KEY||'celeb-clash:leaderboard';
+const KV=!!(KV_URL&&KV_TOK);
 let LB={};try{LB=JSON.parse(fs.readFileSync(DATA,'utf8'))}catch(e){}
-let lbTimer=null;const saveLB=()=>{clearTimeout(lbTimer);lbTimer=setTimeout(()=>fs.writeFile(DATA,JSON.stringify(LB),()=>{}),1000)};
+async function kvLoad(){if(!KV)return;try{const r=await fetch(KV_URL+'/get/'+encodeURIComponent(KV_KEY),{headers:{Authorization:'Bearer '+KV_TOK}});const j=await r.json();
+ if(j&&j.result){const saved=JSON.parse(j.result);for(const [id,v] of Object.entries(saved))if(!LB[id]||(v.at||0)>(LB[id].at||0))LB[id]=v}console.log('Leaderboard loaded from Upstash:',Object.keys(LB).length,'players')}catch(e){console.log('Upstash load failed:',e.message)}}
+async function kvSave(){if(!KV)return;try{const r=await fetch(KV_URL+'/set/'+encodeURIComponent(KV_KEY),{method:'POST',headers:{Authorization:'Bearer '+KV_TOK},body:JSON.stringify(LB)});if(!r.ok)console.log('Upstash save failed:',r.status)}catch(e){console.log('Upstash save failed:',e.message)}}
+let lbTimer=null;const saveLB=()=>{clearTimeout(lbTimer);lbTimer=setTimeout(()=>{fs.writeFile(DATA,JSON.stringify(LB),()=>{});kvSave()},1500)};
+const lbReady=kvLoad();
 const top=()=>Object.entries(LB).map(([id,v])=>Object.assign({id},v)).sort((a,b)=>(b.rp||0)-(a.rp||0)||(b.w||0)-(a.w||0)).slice(0,25);
 const wss=new WebSocketServer({server,path:'/ws',maxPayload:16384});
 const rooms=new Map();let seq=0;
@@ -25,4 +34,4 @@ wss.on('connection',ws=>{ws.peer='k'+(++seq).toString(36)+Math.random().toString
    const rows=top();for(const o of wss.clients)if(o.lb)send(o,{t:'lb',rows})}});
  ws.on('close',()=>{for(const room of Object.keys(ws.pres))leave(ws,room)})});
 setInterval(()=>{for(const o of wss.clients)o.rate=0},1000);
-server.listen(PORT,()=>console.log('Celeb Clash running on http://localhost:'+PORT));
+lbReady.finally(()=>server.listen(PORT,()=>console.log('Celeb Clash running on http://localhost:'+PORT+(KV?' (leaderboard: Upstash)':' (leaderboard: local file, resets on redeploy)'))));
