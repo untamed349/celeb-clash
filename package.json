@@ -1,0 +1,1 @@
+{"name":"celeb-clash","version":"1.0.0","private":true,"description":"Celeb Clash platform fighter with online play","main":"server.js","scripts":{"start":"node server.js"},"engines":{"node":">=18"},"dependencies":{"ws":"^8.18.0"}}
