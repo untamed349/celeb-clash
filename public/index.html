@@ -1308,6 +1308,37 @@ const _ui16=ui;ui=function(){if(st=='name'){bgUI(W/2,H/2);nameDraw();return}if(N
 try{if(window.CCNET&&SV.nick&&CCNET.user.name()!=SV.nick)CCNET.user.setName(SV.nick)}catch(e){}
 
 
+// ================= MOD17: floating joystick for mobile =================
+// Touch anywhere on the left side of the screen: the stick appears under your thumb.
+// Drag past the edge and the stick follows your thumb, so reversing direction is instant.
+// Hysteresis stops left/right flicker; dropping through a platform needs a clear downward pull.
+const JK=js.querySelector('i');const JS2={act:false,cx:0,cy:0,hx:0,hy:0,R:50,L:false,Rt:false,dn:false,up:false,dr:false};
+js.style.transition='opacity .15s';
+function jsHome(){const tr=js.style.transform;js.style.transform='';const r=js.getBoundingClientRect();js.style.transform=tr;JS2.hx=r.left+r.width/2;JS2.hy=r.top+r.height/2;JS2.R=Math.max(48,Math.min(r.width,r.height)/2*.8);JS2.lr=SET.jsm==1;if(JS2.lr)JS2.R=Math.max(40,r.width/2*.7)}
+function jsBase(){js.style.transform='translate('+(JS2.cx-JS2.hx)+'px,'+(JS2.cy-JS2.hy)+'px)'}
+function jsBegin(x,y){jsHome();const m=JS2.R+12;JS2.cx=Math.max(m,Math.min(innerWidth-m,x));JS2.cy=JS2.lr?JS2.hy:Math.max(m,Math.min(innerHeight-m,y));JS2.act=true;js.style.opacity='1';jsBase();JK.style.transform=''}
+jsSet=function(e){if(!JS2.act)jsBegin(js.getBoundingClientRect().left+js.offsetWidth/2,js.getBoundingClientRect().top+js.offsetHeight/2);
+ let dx=e.clientX-JS2.cx,dy=JS2.lr?0:e.clientY-JS2.cy;const R=JS2.R,l=Math.hypot(dx,dy);
+ if(l>R){const k=(l-R)/l;JS2.cx+=dx*k;JS2.cy+=dy*k;dx-=dx*k;dy-=dy*k;jsBase()}
+ // quick reversal: pulling back ~40% of the stick from your furthest point flips direction straight away
+ const fx=e.clientX;if(JS2.Rt){JS2.ex=Math.max(JS2.ex==null?fx:JS2.ex,fx);if(fx<JS2.ex-R*.4){JS2.cx=fx+R*.36;JS2.ex=null;JS2.Rt=false;JS2.L=true;dx=fx-JS2.cx;jsBase()}}
+ else if(JS2.L){JS2.ex=Math.min(JS2.ex==null?fx:JS2.ex,fx);if(fx>JS2.ex+R*.4){JS2.cx=fx-R*.36;JS2.ex=null;JS2.L=false;JS2.Rt=true;dx=fx-JS2.cx;jsBase()}}else JS2.ex=null
+ const nx=dx/R,ny=dy/R;JK.style.transform='translate('+dx*.62+'px,'+dy*.62+'px)';
+ // hysteresis: turn on past .30, stay on until under .16
+ const pL=JS2.L,pR=JS2.Rt;JS2.L=JS2.L?nx<-.16:nx<-.30;JS2.Rt=JS2.Rt?nx>.16:nx>.30;if(JS2.L!=pL||JS2.Rt!=pR)JS2.ex=null;
+ JS2.up=JS2.up?ny<-.32:ny<-.48;JS2.dn=JS2.dn?ny>.32:ny>.48;
+ // drop-through only for a clear downward pull, not while running diagonally
+ JS2.dr=ny>.78&&Math.abs(nx)<.55;
+ keys.KeyA=JS2.L;keys.KeyD=JS2.Rt;keys.AimU=JS2.up;keys.AimD=JS2.dn;keys.KeyS=JS2.dr};
+jsClr=function(){JS2.act=false;JS2.ex=null;JS2.L=JS2.Rt=JS2.up=JS2.dn=JS2.dr=false;js.style.transform='';js.style.opacity='';JK.style.transform='';keys.KeyA=keys.KeyD=keys.AimU=keys.AimD=keys.KeyS=false};
+// floating zone: left ~45% of the screen below the HUD, while a match is on and the touch pad is showing
+function jsZone(t){if(st!='play'&&st!='rnd')return false;if(getComputedStyle(padEl).display=='none')return false;if(document.body.classList.contains('editing'))return false;
+ const el=document.elementFromPoint(t.clientX,t.clientY);if(el&&el.closest&&el.closest('.b,button,input'))return false;
+ return t.clientX<innerWidth*.46&&t.clientY>innerHeight*.2}
+addEventListener('touchstart',e=>{if(JT!==null)return;for(const t of e.changedTouches){if(jsZone(t)){e.preventDefault();JT=t.identifier;jsBegin(t.clientX,t.clientY);jsSet(t);return}}},{capture:true,passive:false});
+addEventListener('resize',()=>{if(!JS2.act)jsClr()});
+
+
 const _nmOfW=nameOf;nameOf=function(p){if(window.CCNET&&p){if(p.isMe||p.by===CCNET.id)return CCNET.user.name();const n=CCNET.names[p.by];if(n)return n}return _nmOfW(p)};
 // ---- standalone web build extras ----
 const _odW=onlineDraw;onlineDraw=function(){_odW();if(!NET.room||!window.CCNET)return;
