@@ -1339,6 +1339,121 @@ addEventListener('touchstart',e=>{if(JT!==null)return;for(const t of e.changedTo
 addEventListener('resize',()=>{if(!JS2.act)jsClr()});
 
 
+// ================= MOD18: game-style home, play hub, avatar roster, star details, customize =================
+let CV=0;                      // star being viewed in Stars / Customize
+const STATS=(()=>{const sp=CH.map(c=>c.sp),jp=CH.map(c=>c.jp),wt=CH.map(c=>c.wt),pw=CH.map(c=>WP[c.wk].dmg+WP[c.wk].kb*.8),rg=CH.map(c=>WP[c.wk].rg),
+ n=(a,v)=>{const lo=Math.min(...a),hi=Math.max(...a);return hi>lo?.35+.65*(v-lo)/(hi-lo):.7};
+ return CH.map((c,i)=>[['SPEED',n(sp,sp[i])],['JUMP',n(jp,jp[i])],['POWER',n(pw,pw[i])],['RANGE',n(rg,rg[i])],['WEIGHT',n(wt,wt[i])]])})();
+const SIGN=['Notes: three gold notes fly out','Masks: confuse your rival’s controls','Power shot: a curling football','Peppers: fast flaming chilies'];
+const colA=i=>CH[i].a=='#ffffff'?'#7ee0ff':CH[i].a;
+// circular portrait cut from the live sprite (follows the equipped skin)
+function avatar(i,x,y,r,o){o=o||{};const id=o.id||('av'+i+'_'+x),on=HV==id||o.sel;X.save();
+ if(o.sel){X.shadowColor=colA(i);X.shadowBlur=18}X.beginPath();X.arc(x,y,r+4,0,7);X.fillStyle=o.sel?colA(i):'rgba(255,255,255,.22)';X.fill();X.restore();
+ X.save();X.beginPath();X.arc(x,y,r,0,7);const g=X.createLinearGradient(0,y-r,0,y+r);g.addColorStop(0,CH[i].c);g.addColorStop(1,'#140a2e');X.fillStyle=g;X.fill();X.clip();
+ const sc=r/22*1.55;pv(i,x+1.5*sc,y+70*sc,sc,0,o.sk);X.restore();
+ if(on&&!o.sel){X.beginPath();X.arc(x,y,r+4,0,7);X.lineWidth=2;X.strokeStyle='#fff';X.stroke()}
+ if(o.tag)badge(x-20,y-r-16,o.tag,o.tc||'#ffd166',o.tt||'#3a1600',1);
+ if(o.name)otx(CH[i].n,x,y+r+20,o.fs||13,o.sel?'#ffd166':'#fff','center','#140a2e',3);
+ if(o.fn)HB.push({x:x-r-4,y:y-r-4,w:2*r+8,h:2*r+8,id,fn:()=>{sfx('tick');o.fn()}})}
+function statBars(i,x,y,w){STATS[i].forEach(([n,v],k)=>{const yy=y+k*26;tx(n,x,yy+13,12,'#cfc8ff');rrp(x+70,yy+3,w-70,12,6);X.fillStyle='rgba(255,255,255,.12)';X.fill();
+ rrp(x+70,yy+3,Math.max(12,(w-70)*v),12,6);const g=X.createLinearGradient(x+70,0,x+w,0);g.addColorStop(0,CH[i].c);g.addColorStop(1,colA(i));X.fillStyle=g;X.fill();
+ for(let s=1;s<5;s++){X.fillStyle='rgba(10,6,30,.55)';X.fillRect(x+70+(w-70)*s/5-1,yy+3,2,12)}})}
+function starInfo(i,x,y,w){const c=CH[i],wp=WP[c.wk];otx(c.n.toUpperCase(),x,y,30,'#fff','left','#140a2e',6);tx(c.e.toUpperCase(),x,y+22,13,colA(i));
+ statBars(i,x,y+38,w);tx('⚔ '+wp.n+': '+(c.d||'').split('.')[0].replace(/^[^:]*:\s*/,''),x,y+180,13,'#e6e0ff');tx('✦ '+SIGN[i],x,y+200,13,'#e6e0ff')}
+
+// ---------- HOME ----------
+MI2.length=0;
+MI2.push(['Play','▶','Online, Ranked, Offline and Party modes',()=>{st='modes'}],['Stars','👥','Pick your main star, see stats, customize skins',()=>{CV=s1;st='chars'}],['Battle Pass','🎫','Earn XP and unlock skins',()=>{st='bp'}]);
+if(mi>=MI2.length)mi=0;
+const DOCK=[['📋','Challenges',()=>{st='chal'}],['🏆','Leaderboard',()=>{st='lb'}],['❓','How to Play',()=>{st='how'}],['⚙️','Settings',()=>{st='set'}]];
+menuDraw=function(){bgUI(700,300);mdesc=null;
+ X.save();X.translate(36,78);X.rotate(-.03);const lg=X.createLinearGradient(0,-50,0,6);lg.addColorStop(0,'#fff5b8');lg.addColorStop(1,'#ff9f1c');otx('CELEB CLASH',4,5,54,'#140a2e','left','#140a2e',12);otx('CELEB CLASH',0,0,54,lg,'left','#2a0b52',9);X.restore();
+ tx('STAR BRAWL ARENA',42,100,13,'#9fe7ff');
+ // featured main star
+ const fx=690,fy=430,ci=s1;X.save();X.globalAlpha=.25+.08*Math.sin(t*.03);const sg=X.createRadialGradient(fx,fy-120,10,fx,fy-120,260);sg.addColorStop(0,colA(ci));sg.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=sg;X.fillRect(fx-300,fy-400,600,460);X.restore();
+ pedestal(fx,fy,colA(ci));pv(ci,fx,fy,3.1,1);otx(CH[ci].n.toUpperCase(),fx,fy+52,30,'#fff','center','#140a2e',7);tx('YOUR MAIN  ·  '+SKINS[ci][effSk(ci)].n,fx,fy+72,12,'#cfc8ff','center');
+ HB.push({x:fx-110,y:fy-290,w:220,h:300,id:'feat',fn:()=>{sfx('sel');CV=s1;st='chars'}});if(HV=='feat'){tx('TAP TO VIEW STAR',fx,fy-292,13,'#ffd166','center')}
+ // main actions
+ const c=chToday(),cl=c.ids.filter((id,j)=>c.p[j]<CHP[id].n).length;
+ btn(36+(mi==0?6:0),136,320,96,'PLAY',{col:'gold',pulse:1,icon:'▶',fs:46,sel:mi==0,id:'m0',fn:()=>goMenu(0),ho:()=>{mi=0}});
+ btn(36+(mi==1?6:0),248,154,64,'STARS',{col:mi==1?'gold':'blue',icon:'👥',fs:21,sel:mi==1,id:'m1',fn:()=>goMenu(1),ho:()=>{mi=1}});
+ btn(202+(mi==2?6:0),248,154,64,'PASS',{col:mi==2?'gold':'dark',icon:'🎫',fs:21,sel:mi==2,id:'m2',fn:()=>goMenu(2),ho:()=>{mi=2}});
+ // dock of small round icons
+ DOCK.forEach(([ic,n,fn],i)=>{const x=66+i*86,y=372,id='dk'+i,on=HV==id;X.save();X.beginPath();X.arc(x,y,30,0,7);X.fillStyle=on?'rgba(255,209,102,.3)':'rgba(10,6,30,.7)';X.fill();X.lineWidth=on?3:1.5;X.strokeStyle=on?'#ffd166':'rgba(255,255,255,.25)';X.stroke();X.restore();
+  X.font='26px Rubik,sans-serif';X.textAlign='center';X.fillStyle='#fff';X.fillText(ic,x,y+9);tx(n,x,y+48,11,on?'#ffd166':'#cfc8ff','center');
+  if(i==0&&cl)badge(x+12,y-36,String(cl),'#ff4d6d','#fff',1);HB.push({x:x-32,y:y-32,w:64,h:64,id,fn:()=>{sfx('sel');PARTY=null;fn()}})});
+ // profile chip + mute/fullscreen
+ const lv=(SV.xp/100|0)+1,xpi=SV.xp%100,rk=rank();pnl(612,14,330,64,'rgba(10,6,30,.6)','rgba(255,255,255,.18)');
+ X.beginPath();X.arc(646,46,22,0,7);const bg2=X.createLinearGradient(0,24,0,70);bg2.addColorStop(0,'#ffe680');bg2.addColorStop(1,'#ff9f1c');X.fillStyle=bg2;X.fill();X.lineWidth=3;X.strokeStyle='#fff';X.stroke();otx(String(lv),646,56,24,'#fff','center','#7a3b00',5);
+ tx(nameGet().slice(0,14)+'  ✏️',678,38,15,'#fff');tx(RKI[rk[0]]+' '+rk[0],930,38,13,RKC[rk[0]],'right');rrp(678,48,252,10,5);X.fillStyle='rgba(255,255,255,.14)';X.fill();rrp(678,48,Math.max(10,252*xpi/100),10,5);X.fillStyle='#ffd166';X.fill();tx('Level '+lv+'  ·  '+xpi+' / 100 XP',678,72,11,'#cfc8ff');
+ HB.push({x:612,y:14,w:330,h:64,id:'pname',fn:nameOpen});
+ btn(552,24,48,44,'',{col:'dark',icon:muted?'🔇':'🔊',fs:20,id:'mute',fn:tgl});btn(496,24,48,44,'',{col:'dark',icon:document.fullscreenElement?'🗗':'⛶',fs:20,id:'fs',fn:togFS});
+ tx(TIPS[(t/420|0)%TIPS.length],36,522,12,'#a99fd6')};
+
+// ---------- PLAY HUB ----------
+const HUB=[['🌐','ONLINE','Fight a real player',()=>{st='online'}],['🏅','RANKED','Climb Bronze to Master',()=>{mode='rank';st='sel'}],['⚔️','OFFLINE','Versus, FFA, 2v2, Arcade, Training',()=>{st='offl'}],['🎉','PARTY','Brawlball, Gadget Frenzy, Moon Brawl',()=>{st='party'}]];
+let hbi=0;UI.push('modes','cust');
+function modesDraw(){hdr('PLAY');HUB.forEach((m,i)=>{const x=30+i*228,y=96,s=hbi==i,id='hub'+i;X.save();if(s){X.shadowColor='#ffd166';X.shadowBlur=20}
+  pnl(x,y-(s?8:0),212,360,s?'rgba(255,209,102,.18)':'rgba(10,6,30,.62)',s?'#ffd166':'rgba(255,255,255,.18)');X.restore();
+  const g=X.createRadialGradient(x+106,y+120,6,x+106,y+120,110);g.addColorStop(0,s?'rgba(255,209,102,.35)':'rgba(126,224,255,.15)');g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(x,y,212,240);
+  X.font='78px Rubik,sans-serif';X.textAlign='center';X.fillStyle='#fff';X.fillText(m[0],x+106,y+150-(s?8:0));otx(m[1],x+106,y+226-(s?8:0),32,s?'#ffd166':'#fff','center','#140a2e',7);
+  wrapT(m[2],x+106,y+256-(s?8:0),180,18,13,'#e6e0ff');if(i==3)badge(x+150,y+2-(s?8:0),'NEW','#ff4d6d','#fff',1);
+  btn(x+26,y+292-(s?8:0),160,48,'GO',{col:s?'gold':'blue',icon:'▶',fs:22,id,fn:()=>{sfx('sel');PARTY=null;m[3]()},ho:()=>{hbi=i}})});
+ tx('Your main: '+CH[s1].n+'  ·  change it in STARS',W/2,500,13,'#cfc8ff','center')}
+
+// ---------- STARS (avatar roster + details) ----------
+charsDraw=function(){hdr('STARS');const i=CV;
+ CH.forEach((c,j)=>avatar(j,80+j*100,124,32,{sel:j==i,name:1,fs:11,id:'ros'+j,tag:j==s1?'MAIN':null,fn:()=>{CV=j}}));
+ pnl(28,190,404,332,'rgba(10,6,30,.55)','rgba(255,255,255,.15)');const sg=X.createRadialGradient(230,350,10,230,350,200);sg.addColorStop(0,colA(i)+'55');sg.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=sg;X.fillRect(28,186,404,336);
+ pedestal(230,470,colA(i));pv(i,230,470,2.9,1);
+ pnl(448,96,488,426,'rgba(10,6,30,.62)','rgba(255,255,255,.18)');starInfo(i,470,140,440);
+ tx('SKIN: '+SKINS[i][effSk(i)].n,470,372,13,'#fff');
+ btn(470,392,214,56,'CUSTOMIZE',{col:'blue',icon:'🎨',fs:20,id:'cust',fn:()=>{sfx('sel');st='cust'}});
+ const m=s1==i;btn(700,392,214,56,m?'YOUR MAIN':'SET AS MAIN',{col:m?'dark':'gold',icon:m?'✔':'★',fs:20,id:'main',fn:()=>{if(!m){s1=i;if(s2==s1)cyc(1);SV.main=i;save();sfx('sel')}}});
+ btn(470,458,444,50,'PLAY AS '+CH[i].n.toUpperCase(),{col:'gold',pulse:1,icon:'▶',fs:20,id:'pas',fn:()=>{s1=i;if(s2==s1)cyc(1);SV.main=i;save();sfx('sel');st='modes'}})};
+
+// ---------- CUSTOMIZE (skin gallery) ----------
+function custDraw(){hdr('CUSTOMIZE',()=>{st='chars'});const i=CV,n=SKINS[i].length,cw=Math.min(212,(912-(n-1)*16)/n);
+ otx(CH[i].n.toUpperCase(),936,48,22,colA(i),'right','#140a2e',5);
+ SKINS[i].forEach((sk,k)=>{const x=24+k*(cw+16),y=86,u=unl(i,k),eq=SV.sk[i]==k,id='skn'+k,on=HV==id;X.save();if(eq){X.shadowColor=colA(i);X.shadowBlur=18}
+  pnl(x,y-(on?4:0),cw,350,eq?'rgba(255,209,102,.16)':'rgba(10,6,30,.62)',eq?'#ffd166':on?'#fff':'rgba(255,255,255,.18)');X.restore();
+  X.save();rrp(x,y,cw,300,14);X.clip();if(!u)X.globalAlpha=.4;pedestal(x+cw/2,y+262,colA(i));pv(i,x+cw/2,y+262,2.3,on?1:0,k);X.restore();X.globalAlpha=1;
+  if(!u){X.font='36px Rubik,sans-serif';X.textAlign='center';X.fillStyle='#fff';X.fillText('🔒',x+cw/2,y+150)}
+  otx(sk.n.toUpperCase(),x+cw/2,y+300,17,'#fff','center','#140a2e',4);
+  if(eq)badge(x+cw/2-42,y+316,'✔ EQUIPPED','#1fbf5b','#fff');else if(u)badge(x+cw/2-30,y+316,'TAP TO USE','rgba(255,255,255,.18)','#fff');else badge(x+cw/2-46,y+316,'PASS TIER '+tierOf(i,k),'#ffd166','#3a1600');
+  HB.push({x,y,w:cw,h:350,id,fn:()=>{if(u){SV.sk[i]=k;save();sfx('sel')}else{sfx('tick');FT2=['Unlock at Battle Pass tier '+tierOf(i,k),90]}}})});
+ if(typeof FT2!='undefined'&&FT2&&FT2[1]>0){FT2[1]--;otx(FT2[0],W/2,474,18,'#ffb36b','center','#140a2e',5)}
+ btn(W/2-170,476,160,46,'Battle Pass',{col:'dark',icon:'🎫',fs:18,id:'c2bp',fn:()=>{st='bp'}});btn(W/2+10,476,160,46,'Done',{col:'gold',icon:'✔',fs:18,id:'cdone',fn:()=>{st='chars'}})}
+let FT2=null;
+
+// ---------- PRE-MATCH SELECT: avatars + stats ----------
+selDraw=function(){bgUI(W/2,240);hdr('YOUR STAR');stagePick(548,14);
+ if(mode=='local'&&!matchMedia('(pointer:coarse)').matches)btn(W-196,14,170,44,cpu?'Vs CPU':'2 Players',{col:'blue',fs:20,id:'cpu',fn:()=>{cpu=!cpu}});else{pnl(W-196,14,170,44,'rgba(10,6,30,.6)','rgba(255,255,255,.2)');otx(modeName(),W-111,45,modeName().length>9?17:22,'#ffd166','center')}
+ // P1 preview
+ const sg=X.createRadialGradient(180,300,10,180,300,180);sg.addColorStop(0,colA(s1)+'55');sg.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=sg;X.fillRect(0,80,380,360);
+ pedestal(180,372,colA(s1));pv(s1,180,372,2.5,1);badge(150,92,'P1','#ffd166','#3a1600',1);
+ skinPick(s1,30,392);
+ CH.forEach((c,j)=>avatar(j,62+j*78,488,28,{sel:j==s1,id:'p1a'+j,fn:()=>{if(s1!=j){s1=j;if(s2==s1)cyc(1)}}}));
+ // stats in the middle
+ pnl(352,84,260,300,'rgba(10,6,30,.62)','rgba(255,255,255,.18)');otx(CH[s1].n.toUpperCase(),372,118,22,'#fff','left','#140a2e',5);tx(CH[s1].e.toUpperCase(),372,138,12,colA(s1));statBars(s1,372,152,220);
+ const si=selInfo();if(si){wrapT(si[0],482,306,230,16,12,'#fff');wrapT(si[1],482,340,230,16,12,'#cfc8ff')}else{tx('⚔ '+WP[CH[s1].wk].n,372,306,13,'#e6e0ff');wrapT(SIGN[s1],482,330,230,16,12,'#e6e0ff')}
+ btn(362,398,240,74,'FIGHT!',{col:'gold',pulse:1,fs:40,id:'fight',fn:start});
+ // rival side
+ const solo=mode=='ffa'||mode=='team',arc=mode=='arcade';
+ if(solo||arc){pnl(640,120,296,250,'rgba(10,6,30,.5)','rgba(255,255,255,.15)');X.font='54px Rubik,sans-serif';X.textAlign='center';X.fillStyle='#fff';X.fillText(arc?'🏆':solo&&mode=='team'?'🤝':'🌀',788,210);
+  otx(arc?'BEAT EVERY STAR':mode=='team'?'2 VS 2':'FREE FOR ALL',788,262,22,'#ffd166','center');tx(arc?'Then face the boss':'The other stars are CPU',788,288,13,'#cfc8ff','center');}
+ else{otx('VS',652,250,46,'#ff6b6b','center','#140a2e',9);X.save();X.translate(790,372);X.scale(-1,1);pedestal(0,0,colA(s2));pv(s2,0,0,2.2,0);X.restore();
+  badge(756,92,mode=='train'?'DUMMY':mode=='local'&&!cpu?'P2':'CPU','#ff6b6b','#fff',1);otx(CH[s2].n.toUpperCase(),790,404,20,'#fff','center','#140a2e',5);
+  CH.forEach((c,j)=>{if(j==s1)return;const k=CH.map((_,q)=>q).filter(q=>q!=s1).indexOf(j);avatar(j,712+k*78,488,26,{sel:j==s2,id:'p2a'+j,fn:()=>{s2=j}})})}};
+// remember the main star between sessions
+if(SV.main!=null&&SV.main>=0&&SV.main<CH.length)s1=SV.main,(s2==s1&&cyc(1));
+const _ui18=ui;ui=function(){if(st=='modes'){bgUI(W/2,H/2);modesDraw();return}if(st=='cust'){bgUI(W/2,H/2);custDraw();return}_ui18()};
+addEventListener('keydown',e=>{if(e.repeat)return;const k=e.code;
+ if(st=='modes'){if(k=='ArrowLeft'||k=='KeyA'){hbi=(hbi+3)%4;sfx('tick')}else if(k=='ArrowRight'||k=='KeyD'){hbi=(hbi+1)%4;sfx('tick')}else if(k=='Enter'||k=='Space'){sfx('sel');PARTY=null;HUB[hbi][3]()}}
+ else if(st=='chars'){if(k=='ArrowLeft'||k=='KeyA'){CV=(CV+3)%4;sfx('tick')}else if(k=='ArrowRight'||k=='KeyD'){CV=(CV+1)%4;sfx('tick')}else if(k=='Enter'||k=='Space'){st='cust';sfx('sel')}}
+ else if(st=='cust'){const n=SKINS[CV].length;if(k=='ArrowLeft'||k=='KeyA'){skinCyc(CV,-1,1)}else if(k=='ArrowRight'||k=='KeyD'){skinCyc(CV,1,1)}else if(k=='Enter'||k=='Space'||k=='Backspace'){st='chars';sfx('sel')}}});
+
+
 const _nmOfW=nameOf;nameOf=function(p){if(window.CCNET&&p){if(p.isMe||p.by===CCNET.id)return CCNET.user.name();const n=CCNET.names[p.by];if(n)return n}return _nmOfW(p)};
 // ---- standalone web build extras ----
 const _odW=onlineDraw;onlineDraw=function(){_odW();if(!NET.room||!window.CCNET)return;
