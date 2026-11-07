@@ -1350,7 +1350,7 @@ const colA=i=>CH[i].a=='#ffffff'?'#7ee0ff':CH[i].a;
 function avatar(i,x,y,r,o){o=o||{};const id=o.id||('av'+i+'_'+x),on=HV==id||o.sel;X.save();
  if(o.sel){X.shadowColor=colA(i);X.shadowBlur=18}X.beginPath();X.arc(x,y,r+4,0,7);X.fillStyle=o.sel?colA(i):'rgba(255,255,255,.22)';X.fill();X.restore();
  X.save();X.beginPath();X.arc(x,y,r,0,7);const g=X.createLinearGradient(0,y-r,0,y+r);g.addColorStop(0,CH[i].c);g.addColorStop(1,'#140a2e');X.fillStyle=g;X.fill();X.clip();
- const sc=r/22*1.55;pv(i,x+1.5*sc,y+70*sc,sc,0,o.sk);X.restore();
+ const sc=r/22*1.55,tt=t;t=0;try{pv(i,x+1.5*sc,y+70*sc,sc,0,o.sk)}finally{t=tt}X.restore();
  if(on&&!o.sel){X.beginPath();X.arc(x,y,r+4,0,7);X.lineWidth=2;X.strokeStyle='#fff';X.stroke()}
  if(o.tag)badge(x-20,y-r-16,o.tag,o.tc||'#ffd166',o.tt||'#3a1600',1);
  if(o.name)otx(CH[i].n,x,y+r+20,o.fs||13,o.sel?'#ffd166':'#fff','center','#140a2e',3);
@@ -1413,17 +1413,25 @@ charsDraw=function(){hdr('STARS');const i=CV;
  btn(470,458,444,50,'PLAY AS '+CH[i].n.toUpperCase(),{col:'gold',pulse:1,icon:'▶',fs:20,id:'pas',fn:()=>{s1=i;if(s2==s1)cyc(1);SV.main=i;save();sfx('sel');st='modes'}})};
 
 // ---------- CUSTOMIZE (skin gallery) ----------
-function custDraw(){hdr('CUSTOMIZE',()=>{st='chars'});const i=CV,n=SKINS[i].length,cw=Math.min(212,(912-(n-1)*16)/n);
+let PK=null;
+function custDraw(){hdr('CUSTOMIZE',()=>{PK=null;st='chars'});const i=CV,n=SKINS[i].length;if(PK==null||PK>=n)PK=SV.sk[i];const k=PK,u=unl(i,k),eq=SV.sk[i]==k;
  otx(CH[i].n.toUpperCase(),936,48,22,colA(i),'right','#140a2e',5);
- SKINS[i].forEach((sk,k)=>{const x=24+k*(cw+16),y=86,u=unl(i,k),eq=SV.sk[i]==k,id='skn'+k,on=HV==id;X.save();if(eq){X.shadowColor=colA(i);X.shadowBlur=18}
-  pnl(x,y-(on?4:0),cw,350,eq?'rgba(255,209,102,.16)':'rgba(10,6,30,.62)',eq?'#ffd166':on?'#fff':'rgba(255,255,255,.18)');X.restore();
-  X.save();rrp(x,y,cw,300,14);X.clip();if(!u)X.globalAlpha=.4;pedestal(x+cw/2,y+262,colA(i));pv(i,x+cw/2,y+262,2.3,on?1:0,k);X.restore();X.globalAlpha=1;
-  if(!u){X.font='36px Rubik,sans-serif';X.textAlign='center';X.fillStyle='#fff';X.fillText('🔒',x+cw/2,y+150)}
-  otx(sk.n.toUpperCase(),x+cw/2,y+300,17,'#fff','center','#140a2e',4);
-  if(eq)badge(x+cw/2-42,y+316,'✔ EQUIPPED','#1fbf5b','#fff');else if(u)badge(x+cw/2-30,y+316,'TAP TO USE','rgba(255,255,255,.18)','#fff');else badge(x+cw/2-46,y+316,'PASS TIER '+tierOf(i,k),'#ffd166','#3a1600');
-  HB.push({x,y,w:cw,h:350,id,fn:()=>{if(u){SV.sk[i]=k;save();sfx('sel')}else{sfx('tick');FT2=['Unlock at Battle Pass tier '+tierOf(i,k),90]}}})});
- if(typeof FT2!='undefined'&&FT2&&FT2[1]>0){FT2[1]--;otx(FT2[0],W/2,474,18,'#ffb36b','center','#140a2e',5)}
- btn(W/2-170,476,160,46,'Battle Pass',{col:'dark',icon:'🎫',fs:18,id:'c2bp',fn:()=>{st='bp'}});btn(W/2+10,476,160,46,'Done',{col:'gold',icon:'✔',fs:18,id:'cdone',fn:()=>{st='chars'}})}
+ // one big player preview
+ pnl(28,76,440,446,'rgba(10,6,30,.55)','rgba(255,255,255,.15)');const sg=X.createRadialGradient(248,330,10,248,330,230);sg.addColorStop(0,colA(i)+'66');sg.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=sg;X.fillRect(28,76,440,446);
+ X.save();if(!u)X.globalAlpha=.55;pedestal(248,430,colA(i));pv(i,248,430,3.1,1,k);X.restore();
+ if(!u){X.font='40px Rubik,sans-serif';X.textAlign='center';X.fillStyle='#fff';X.fillText('🔒',248,250)}
+ btn(44,452,52,56,'◀',{col:'dark',fs:22,id:'pkl',fn:()=>{PK=(k+n-1)%n;if(unl(i,PK)){SV.sk[i]=PK;save()}sfx('tick')}});
+ pnl(104,452,288,56,'rgba(10,6,30,.7)','rgba(255,255,255,.2)');otx(SKINS[i][k].n.toUpperCase(),248,487,22,u?'#fff':'#a99fd6','center','#140a2e',5);
+ btn(400,452,52,56,'▶',{col:'dark',fs:22,id:'pkr',fn:()=>{PK=(k+1)%n;if(unl(i,PK)){SV.sk[i]=PK;save()}sfx('tick')}});
+ // skin names: tap one to put it on
+ pnl(484,76,452,446,'rgba(10,6,30,.62)','rgba(255,255,255,.18)');otx('SKINS',506,112,22,'#ffd166');tx('Tap a name to wear it',914,110,12,'#cfc8ff','right');
+ SKINS[i].forEach((sk,q)=>{const y=128+q*66,uu=unl(i,q),ee=SV.sk[i]==q,sel=q==k,id='skr'+q,on=HV==id;
+  rrp(500,y,420,56,12);X.fillStyle=sel?'rgba(255,209,102,.2)':on?'rgba(255,255,255,.1)':'rgba(255,255,255,.05)';X.fill();X.lineWidth=sel?2.5:1;X.strokeStyle=sel?'#ffd166':'rgba(255,255,255,.15)';X.stroke();
+  avatar(i,532,y+28,20,{sk:q,id:id+'a'});otx(sk.n,566,y+35,19,uu?'#fff':'#8f86c0','left','#140a2e',4);
+  if(ee)badge(816,y+16,'✔ WEARING','#1fbf5b','#fff');else if(!uu)badge(816,y+16,'🔒 TIER '+tierOf(i,q),'rgba(255,209,102,.9)','#3a1600');
+  HB.push({x:500,y,w:420,h:56,id,fn:()=>{PK=q;if(uu){SV.sk[i]=q;save();sfx('sel')}else sfx('tick')}})});
+ const by=128+n*66+8;if(!u)tx('Locked: reach Battle Pass tier '+tierOf(i,k)+' to wear '+SKINS[i][k].n+'.',506,Math.min(by+10,450),13,'#ffb36b');
+ btn(506,462,190,46,'Battle Pass',{col:'dark',icon:'🎫',fs:18,id:'c2bp',fn:()=>{st='bp'}});btn(716,462,200,46,'Done',{col:'gold',icon:'✔',fs:18,id:'cdone',fn:()=>{PK=null;st='chars'}})}
 let FT2=null;
 
 // ---------- PRE-MATCH SELECT: avatars + stats ----------
@@ -1451,7 +1459,7 @@ const _ui18=ui;ui=function(){if(st=='modes'){bgUI(W/2,H/2);modesDraw();return}if
 addEventListener('keydown',e=>{if(e.repeat)return;const k=e.code;
  if(st=='modes'){if(k=='ArrowLeft'||k=='KeyA'){hbi=(hbi+3)%4;sfx('tick')}else if(k=='ArrowRight'||k=='KeyD'){hbi=(hbi+1)%4;sfx('tick')}else if(k=='Enter'||k=='Space'){sfx('sel');PARTY=null;HUB[hbi][3]()}}
  else if(st=='chars'){if(k=='ArrowLeft'||k=='KeyA'){CV=(CV+3)%4;sfx('tick')}else if(k=='ArrowRight'||k=='KeyD'){CV=(CV+1)%4;sfx('tick')}else if(k=='Enter'||k=='Space'){st='cust';sfx('sel')}}
- else if(st=='cust'){const n=SKINS[CV].length;if(k=='ArrowLeft'||k=='KeyA'){skinCyc(CV,-1,1)}else if(k=='ArrowRight'||k=='KeyD'){skinCyc(CV,1,1)}else if(k=='Enter'||k=='Space'||k=='Backspace'){st='chars';sfx('sel')}}});
+ else if(st=='cust'){const n=SKINS[CV].length;if(PK==null)PK=SV.sk[CV];if(k=='ArrowLeft'||k=='KeyA'||k=='ArrowUp'||k=='KeyW'){PK=(PK+n-1)%n}else if(k=='ArrowRight'||k=='KeyD'||k=='ArrowDown'||k=='KeyS'){PK=(PK+1)%n}else if(k=='Enter'||k=='Space'||k=='Backspace'){PK=null;st='chars';sfx('sel');return}else return;if(unl(CV,PK)){SV.sk[CV]=PK;save()}sfx('tick')}});
 
 
 const _nmOfW=nameOf;nameOf=function(p){if(window.CCNET&&p){if(p.isMe||p.by===CCNET.id)return CCNET.user.name();const n=CCNET.names[p.by];if(n)return n}return _nmOfW(p)};
