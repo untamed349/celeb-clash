@@ -1504,13 +1504,7 @@ menuDraw=function(){homeBG();mdesc=null;
  // logo
  X.save();X.translate(300,66);X.rotate(-.025);const lg=X.createLinearGradient(0,-48,0,8);lg.addColorStop(0,'#fff27a');lg.addColorStop(.5,'#ffc21a');lg.addColorStop(1,'#ff8a00');
  otx('CELEB CLASH',5,7,56,'#050c23','center','#050c23',14);otx('CELEB CLASH',0,0,56,lg,'center','#050c23',12);otx('STAR BRAWL ARENA',0,30,15,'#7fd8ff','center','#050c23',4);X.restore();
- // featured main star: static action pose over a paint burst
- const ci=s1,cx=520,cy=420;burst(cx+10,cy-150,190,'rgba(255,214,120,.9)');burst(cx+10,cy-150,150,'rgba(255,240,190,.95)');
- X.save();X.strokeStyle='rgba(255,255,255,.5)';X.lineWidth=4;for(let k=0;k<9;k++){const a=-.4+k*.11,y0=cy-210+k*22;X.beginPath();X.moveTo(cx-250+k*6,y0);X.lineTo(cx-160+k*4,y0+a*10);X.stroke()}X.restore();
- const tt=t;t=4;try{pv(ci,cx,cy,3.6,1)}finally{t=tt}
- HB.push({x:cx-130,y:cy-320,w:260,h:330,id:'feat',fn:()=>{sfx('sel');CV=s1;st='chars'}});
- X.save();slant(cx-190,cy+12,380,62,10);X.fillStyle='rgba(5,20,60,.85)';X.fill();X.lineWidth=2;X.strokeStyle='#5fb8ff';X.stroke();X.restore();
- otx('YOUR MAIN STAR',cx,cy+38,20,'#fff','center','#050c23',5);otx(CH[ci].n+', '+TITLE[ci],cx,cy+62,17,'#5fd0ff','center','#050c23',4);
+ const ci=s1;
  // left banners
  MI2.forEach((m,i)=>banner(i,14,112+i*58,300,50));
  // profile bar
@@ -1528,11 +1522,34 @@ menuDraw=function(){homeBG();mdesc=null;
  newsCard(736,162,212,216,'n1',(x,y,w,h)=>{const g=X.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#ff7a1a');g.addColorStop(1,'#b3260e');X.fillStyle=g;X.fillRect(x,y,w,h);
    burst(x+w/2,y+86,80,'rgba(255,220,120,.55)');X.strokeStyle='rgba(255,255,255,.85)';X.lineWidth=4;X.strokeRect(x+40,y+44,w-80,84);X.lineWidth=1;X.globalAlpha=.5;for(let k=x+48;k<x+w-40;k+=10){X.beginPath();X.moveTo(k,y+44);X.lineTo(k,y+128);X.stroke()}X.globalAlpha=1;
    X.font='54px Rubik,sans-serif';X.textAlign='center';X.fillText('⚽',x+w/2,y+112);otx('BRAWLBALL',x+w/2,y+40,24,'#fff','center','#5a1405',6)},'NEW: PARTY MODES','Brawlball, Gadgets, Moon Brawl',()=>{st='party'});
- const sp=(s1+1+((t/600|0)%3))%4;
+ const sp=3;
  newsCard(736,388,212,118,'n2',(x,y,w,h)=>{const g=X.createLinearGradient(x,y,x+w,y);g.addColorStop(0,CH[sp].c);g.addColorStop(1,'#0b1b3d');X.fillStyle=g;X.fillRect(x,y,w,h);X.save();X.globalAlpha=.25;burst(x+150,y+50,70,'#fff');X.restore();avatar(sp,x+156,y+48,38,{id:'n2a'})},'STAR SPOTLIGHT',CH[sp].n+' · new skins',()=>{CV=sp;st='chars'});
  // bottom hint bar
  X.fillStyle='rgba(3,12,40,.85)';X.fillRect(-OX,516,W+2*OX,24+OY);
  const hint=matchMedia('(pointer:coarse)').matches?'Tap a banner to play   ·   Tap your star to view and customize':'↑ ↓  Choose      Enter  Select      Esc  Back';tx(hint,W/2,533,13,'#cfe6ff','center')};
+
+
+// ================= MOD20: lighter home screen + cached art (less work per frame) =================
+// Home background is painted once into an offscreen canvas and reused every frame.
+let HBC=null,HBK='';
+homeBG=function(){const k=OX+'|'+OY+'|'+KS;if(HBK!==k||!HBC){HBK=k;const w=W+2*OX,h=H+2*OY,s=Math.min(2,KS||1);HBC=HBC||document.createElement('canvas');HBC.width=Math.ceil(w*s);HBC.height=Math.ceil(h*s);
+  const c=HBC.getContext('2d');c.setTransform(s,0,0,s,OX*s,OY*s);const g=c.createLinearGradient(0,0,W,H);g.addColorStop(0,'#0b3f9a');g.addColorStop(.55,'#0a5fc4');g.addColorStop(1,'#063174');c.fillStyle=g;c.fillRect(-OX,-OY,w,h);
+  c.globalCompositeOperation='lighter';c.lineWidth=2;BGS.forEach(([x,y,l,a])=>{c.strokeStyle='rgba(140,210,255,'+a+')';c.beginPath();c.moveTo(x,y);c.lineTo(x+l*.5,y-l);c.stroke()});
+  const r=c.createRadialGradient(480,300,40,480,300,420);r.addColorStop(0,'rgba(120,200,255,.22)');r.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=r;c.fillRect(0,0,W,H);c.globalCompositeOperation='source-over';
+  const v=c.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.05);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,10,40,.55)');c.fillStyle=v;c.fillRect(-OX,-OY,w,h)}
+ X.drawImage(HBC,-OX,-OY,W+2*OX,H+2*OY)};
+// Portraits are cut from the sprite sheet once per star+skin (128px) and reused.
+const AVC=new Map();
+function avImg(i,k){const key=i+'|'+k;if(AVC.has(key))return AVC.get(key);const S=SPRM[CH[i].ac];if(!S||!S.ok||!S.pos||!S.pos.idle0)return null;
+ const ch=skinCH(i,k),img=skinImg(S,ch),[sx,sy,sw,sh,ax]=S.pos.idle0,side=sh*.36,cx=sx+ax+side*.04,cv=document.createElement('canvas');cv.width=cv.height=128;const c=cv.getContext('2d');
+ c.beginPath();c.arc(64,64,64,0,7);c.clip();const g=c.createLinearGradient(0,0,0,128);g.addColorStop(0,CH[i].c);g.addColorStop(1,'#140a2e');c.fillStyle=g;c.fillRect(0,0,128,128);
+ c.drawImage(img,cx-side/2,sy-side*.04,side,side,4,10,120,120);AVC.set(key,cv);return cv}
+const _av20=avatar;
+avatar=function(i,x,y,r,o){o=o||{};const k=o.sk==null?effSk(i):o.sk,im=avImg(i,k);if(!im)return _av20(i,x,y,r,o);
+ const id=o.id||('av'+i+'_'+x),on=HV==id||o.sel;X.save();if(o.sel){X.shadowColor=colA(i);X.shadowBlur=18}X.beginPath();X.arc(x,y,r+4,0,7);X.fillStyle=o.sel?colA(i):'rgba(255,255,255,.22)';X.fill();X.restore();
+ X.drawImage(im,x-r,y-r,2*r,2*r);if(on&&!o.sel){X.beginPath();X.arc(x,y,r+4,0,7);X.lineWidth=2;X.strokeStyle='#fff';X.stroke()}
+ if(o.tag)badge(x-20,y-r-16,o.tag,o.tc||'#ffd166',o.tt||'#3a1600',1);if(o.name)otx(CH[i].n,x,y+r+20,o.fs||13,o.sel?'#ffd166':'#fff','center','#140a2e',3);
+ if(o.fn)HB.push({x:x-r-4,y:y-r-4,w:2*r+8,h:2*r+8,id,fn:()=>{sfx('tick');o.fn()}})};
 
 
 const _nmOfW=nameOf;nameOf=function(p){if(window.CCNET&&p){if(p.isMe||p.by===CCNET.id)return CCNET.user.name();const n=CCNET.names[p.by];if(n)return n}return _nmOfW(p)};
