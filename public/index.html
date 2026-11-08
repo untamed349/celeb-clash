@@ -1462,6 +1462,79 @@ addEventListener('keydown',e=>{if(e.repeat)return;const k=e.code;
  else if(st=='cust'){const n=SKINS[CV].length;if(PK==null)PK=SV.sk[CV];if(k=='ArrowLeft'||k=='KeyA'||k=='ArrowUp'||k=='KeyW'){PK=(PK+n-1)%n}else if(k=='ArrowRight'||k=='KeyD'||k=='ArrowDown'||k=='KeyS'){PK=(PK+1)%n}else if(k=='Enter'||k=='Space'||k=='Backspace'){PK=null;st='chars';sfx('sel');return}else return;if(unl(CV,PK)){SV.sk[CV]=PK;save()}sfx('tick')}});
 
 
+// ================= MOD19: Brawlhalla-style home screen (static art, slanted banners, news cards) =================
+const TITLE=['THE MIC DROP','THE LAST LAUGH','THE GOLDEN BOOT','THE HEAT'];
+MI2.length=0;
+MI2.push(['PLAY','#ff5fb4','#ff9fd3',()=>{st='online'},'Fight a real player online'],
+ ['RANKED','#f4f8ff','#8fe8ff',()=>{mode='rank';st='sel'},'Climb the ladder from Bronze to Master'],
+ ['BATTLE PASS','#ffc21a','#ffe27a',()=>{st='bp'},'Earn XP and unlock skins'],
+ ['PARTY MODES','#27a9ff','#7fd0ff',()=>{st='party'},'Brawlball, Gadget Frenzy, Moon Brawl'],
+ ['OFFLINE PLAY','#7a3cff','#b18cff',()=>{st='offl'},'Versus, Free For All, 2v2, Arcade, Training'],
+ ['MEET THE STARS','#8f7cff','#c3b8ff',()=>{CV=s1;st='chars'},'Stats, skins and your main star'],
+ ['CHALLENGES','#ff8a1f','#ffc074',()=>{st='chal'},'Three daily goals for bonus XP']);
+if(mi>=MI2.length)mi=0;
+// menu keyboard: up/down only (left/right ignored on this layout)
+addEventListener('keydown',e=>{if(st=='menu'&&(e.code=='ArrowLeft'||e.code=='ArrowRight'||e.code=='KeyA'||e.code=='KeyD'))e.stopImmediatePropagation()},true);
+const BGS=Array.from({length:70},(_,i)=>[rnd(i*3+1)*W,rnd(i*3+2)*H,20+rnd(i*3+3)*140,.02+rnd(i+200)*.05]);
+function homeBG(){const g=X.createLinearGradient(0,0,W,H);g.addColorStop(0,'#0b3f9a');g.addColorStop(.55,'#0a5fc4');g.addColorStop(1,'#063174');X.fillStyle=g;X.fillRect(-OX,-OY,W+2*OX,H+2*OY);
+ X.save();X.globalCompositeOperation='lighter';BGS.forEach(([x,y,l,a])=>{X.strokeStyle='rgba(140,210,255,'+a+')';X.lineWidth=2;X.beginPath();X.moveTo(x,y);X.lineTo(x+l*.5,y-l);X.stroke()});
+ const r=X.createRadialGradient(480,300,40,480,300,420);r.addColorStop(0,'rgba(120,200,255,.25)');r.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=r;X.fillRect(0,0,W,H);X.restore();
+ const v=X.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.05);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,10,40,.55)');X.fillStyle=v;X.fillRect(-OX,-OY,W+2*OX,H+2*OY)}
+function slant(x,y,w,h,k){X.beginPath();X.moveTo(x+k,y);X.lineTo(x+w,y);X.lineTo(x+w-k,y+h);X.lineTo(x,y+h);X.closePath()}
+function banner(i,x,y,w,h){const m=MI2[i],s=mi==i,id='m'+i,hov=HV==id;if(s){x+=10;w+=14}
+ X.save();slant(x+4,y+5,w,h,12);X.fillStyle='rgba(0,8,30,.55)';X.fill();
+ slant(x,y,w,h,12);X.fillStyle='#0b0620';X.fill();slant(x+3,y+3,w-6,h-6,11);const g=X.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,m[1]);g.addColorStop(1,m[2]);X.fillStyle=g;X.fill();
+ X.clip();X.globalAlpha=.16;X.strokeStyle='#fff';X.lineWidth=10;for(let k=-40;k<w+40;k+=34){X.beginPath();X.moveTo(x+k,y+h);X.lineTo(x+k+h*.9,y);X.stroke()}
+ X.globalAlpha=.22;X.fillStyle='#fff';X.fillRect(x,y,w,h*.38);X.restore();
+ if(s){X.save();X.shadowColor='#fff';X.shadowBlur=16;slant(x,y,w,h,12);X.lineWidth=3;X.strokeStyle='#fff';X.stroke();X.restore();
+  X.fillStyle='#fff';X.beginPath();X.moveTo(x-12,y+h/2-9);X.lineTo(x-2,y+h/2);X.lineTo(x-12,y+h/2+9);X.fill()}
+ const dark=i==1;otx(m[0],x+20,y+(s?25:35),s?22:30,dark?'#ffffff':'#fff','left',dark?'#0b2a52':'#0b0620',7);
+ if(s)otx(m[4],x+22,y+h-7,11,'#fff','left',dark?'#0b2a52':'#0b0620',3);
+ if(i==3)badge(x+w-16,y-10,'NEW','#ffffff','#e0245e',1);
+ if(i==6){const c=chToday(),cl=c.ids.filter((id2,j)=>c.p[j]<CHP[id2].n).length;if(cl)badge(x+w-16,y-10,cl+' LEFT','#0b0620','#ffd166',1)}
+ HB.push({x,y,w,h,id,fn:()=>{sfx('sel');goMenu(i)}});if(hov&&mi!=i){mi=i}}
+function burst(cx,cy,r,col){X.save();X.translate(cx,cy);X.fillStyle=col;X.beginPath();for(let k=0;k<22;k++){const a=k/22*Math.PI*2,rr=k%2?r*.62:r*(0.9+rnd(k+70)*.25);X.lineTo(Math.cos(a)*rr,Math.sin(a)*rr*.82)}X.closePath();X.fill();X.restore()}
+function newsCard(x,y,w,h,id,draw,title,sub,fn){const on=HV==id;X.save();rrp(x+3,y+5,w,h,10);X.fillStyle='rgba(0,8,30,.5)';X.fill();rrp(x,y,w,h,10);X.fillStyle='#0b1b3d';X.fill();X.clip();draw(x,y,w,h);
+ const g=X.createLinearGradient(0,y+h-58,0,y+h);g.addColorStop(0,'rgba(5,12,35,0)');g.addColorStop(.45,'rgba(5,12,35,.85)');g.addColorStop(1,'rgba(5,12,35,.95)');X.fillStyle=g;X.fillRect(x,y+h-58,w,58);X.restore();
+ otx(title,x+12,y+h-(sub?24:12),15,'#fff','left','#050c23',4);if(sub)tx(sub,x+12,y+h-8,11,'#cfe6ff');
+ rrp(x,y,w,h,10);X.lineWidth=on?3:2;X.strokeStyle=on?'#ffd166':'#5fb8ff';X.stroke();HB.push({x,y,w,h,id,fn:()=>{sfx('sel');PARTY=null;fn()}})}
+function iconSq(x,y,ic,id,fn,badgeN){const on=HV==id;X.save();rrp(x,y,40,40,7);const g=X.createLinearGradient(0,y,0,y+40);g.addColorStop(0,on?'#5fd0ff':'#2b8cf0');g.addColorStop(1,on?'#2b8cf0':'#1456b8');X.fillStyle=g;X.fill();X.lineWidth=2;X.strokeStyle='#0b2a52';X.stroke();X.restore();
+ X.font='20px Rubik,sans-serif';X.textAlign='center';X.fillStyle='#fff';X.fillText(ic,x+20,y+28);if(badgeN)badge(x+24,y+26,String(badgeN),'#0b0620','#ffd166');HB.push({x,y,w:40,h:40,id,fn})}
+menuDraw=function(){homeBG();mdesc=null;
+ // logo
+ X.save();X.translate(300,66);X.rotate(-.025);const lg=X.createLinearGradient(0,-48,0,8);lg.addColorStop(0,'#fff27a');lg.addColorStop(.5,'#ffc21a');lg.addColorStop(1,'#ff8a00');
+ otx('CELEB CLASH',5,7,56,'#050c23','center','#050c23',14);otx('CELEB CLASH',0,0,56,lg,'center','#050c23',12);otx('STAR BRAWL ARENA',0,30,15,'#7fd8ff','center','#050c23',4);X.restore();
+ // featured main star: static action pose over a paint burst
+ const ci=s1,cx=520,cy=420;burst(cx+10,cy-150,190,'rgba(255,214,120,.9)');burst(cx+10,cy-150,150,'rgba(255,240,190,.95)');
+ X.save();X.strokeStyle='rgba(255,255,255,.5)';X.lineWidth=4;for(let k=0;k<9;k++){const a=-.4+k*.11,y0=cy-210+k*22;X.beginPath();X.moveTo(cx-250+k*6,y0);X.lineTo(cx-160+k*4,y0+a*10);X.stroke()}X.restore();
+ const tt=t;t=4;try{pv(ci,cx,cy,3.6,1)}finally{t=tt}
+ HB.push({x:cx-130,y:cy-320,w:260,h:330,id:'feat',fn:()=>{sfx('sel');CV=s1;st='chars'}});
+ X.save();slant(cx-190,cy+12,380,62,10);X.fillStyle='rgba(5,20,60,.85)';X.fill();X.lineWidth=2;X.strokeStyle='#5fb8ff';X.stroke();X.restore();
+ otx('YOUR MAIN STAR',cx,cy+38,20,'#fff','center','#050c23',5);otx(CH[ci].n+', '+TITLE[ci],cx,cy+62,17,'#5fd0ff','center','#050c23',4);
+ // left banners
+ MI2.forEach((m,i)=>banner(i,14,112+i*58,300,50));
+ // profile bar
+ X.save();rrp(586,8,364,92,8);X.fillStyle='rgba(5,20,60,.8)';X.fill();X.lineWidth=2;X.strokeStyle='#5fb8ff';X.stroke();X.restore();
+ X.save();rrp(594,16,76,76,6);X.fillStyle='#0b0620';X.fill();X.lineWidth=3;X.strokeStyle='#5fd0ff';X.stroke();X.restore();avatar(ci,632,54,32,{id:'pav'});
+ const lv=(SV.xp/100|0)+1,xpi=SV.xp%100,rk=rank();tx(nameGet().slice(0,14)+' ✏️',680,32,15,'#fff');HB.push({x:676,y:14,w:150,h:24,id:'pname',fn:nameOpen});
+ tx(RKI[rk[0]]+' '+rk[0],876,32,12,RKC[rk[0]],'right');rrp(884,20,58,16,4);X.fillStyle='#2bd36b';X.fill();tx('LVL '+lv,913,33,11,'#05230f','center');
+ rrp(680,38,262,6,3);X.fillStyle='rgba(255,255,255,.15)';X.fill();rrp(680,38,Math.max(6,262*xpi/100),6,3);X.fillStyle='#ffd166';X.fill();
+ const c=chToday(),cl=c.ids.filter((id2,j)=>c.p[j]<CHP[id2].n).length;
+ [['🏆','lbI',()=>{st='lb'}],['❗','chI',()=>{st='chal'},cl],['❓','howI',()=>{st='how'}],['🔧','setI',()=>{st='set'}],[muted?'🔇':'🔊','mute',tgl],[document.fullscreenElement?'🗗':'⛶','fs',togFS]]
+  .forEach(([ic,id,fn,b],k)=>iconSq(680+k*44,52,ic,id,()=>{sfx('sel');fn()},b));
+ // right news column
+ X.save();slant(736,112,212,40,8);const gg=X.createLinearGradient(0,112,0,152);gg.addColorStop(0,'#3be07a');gg.addColorStop(1,'#14a34a');X.fillStyle=gg;X.fill();X.lineWidth=3;X.strokeStyle='#d8ffe6';X.stroke();X.restore();
+ otx('EARN FREE REWARDS',842,140,17,'#fff','center','#064d22',5);HB.push({x:736,y:112,w:212,h:40,id:'efr',fn:()=>{sfx('sel');st='bp'}});
+ newsCard(736,162,212,216,'n1',(x,y,w,h)=>{const g=X.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#ff7a1a');g.addColorStop(1,'#b3260e');X.fillStyle=g;X.fillRect(x,y,w,h);
+   burst(x+w/2,y+86,80,'rgba(255,220,120,.55)');X.strokeStyle='rgba(255,255,255,.85)';X.lineWidth=4;X.strokeRect(x+40,y+44,w-80,84);X.lineWidth=1;X.globalAlpha=.5;for(let k=x+48;k<x+w-40;k+=10){X.beginPath();X.moveTo(k,y+44);X.lineTo(k,y+128);X.stroke()}X.globalAlpha=1;
+   X.font='54px Rubik,sans-serif';X.textAlign='center';X.fillText('⚽',x+w/2,y+112);otx('BRAWLBALL',x+w/2,y+40,24,'#fff','center','#5a1405',6)},'NEW: PARTY MODES','Brawlball, Gadgets, Moon Brawl',()=>{st='party'});
+ const sp=(s1+1+((t/600|0)%3))%4;
+ newsCard(736,388,212,118,'n2',(x,y,w,h)=>{const g=X.createLinearGradient(x,y,x+w,y);g.addColorStop(0,CH[sp].c);g.addColorStop(1,'#0b1b3d');X.fillStyle=g;X.fillRect(x,y,w,h);X.save();X.globalAlpha=.25;burst(x+150,y+50,70,'#fff');X.restore();avatar(sp,x+156,y+48,38,{id:'n2a'})},'STAR SPOTLIGHT',CH[sp].n+' · new skins',()=>{CV=sp;st='chars'});
+ // bottom hint bar
+ X.fillStyle='rgba(3,12,40,.85)';X.fillRect(-OX,516,W+2*OX,24+OY);
+ const hint=matchMedia('(pointer:coarse)').matches?'Tap a banner to play   ·   Tap your star to view and customize':'↑ ↓  Choose      Enter  Select      Esc  Back';tx(hint,W/2,533,13,'#cfe6ff','center')};
+
+
 const _nmOfW=nameOf;nameOf=function(p){if(window.CCNET&&p){if(p.isMe||p.by===CCNET.id)return CCNET.user.name();const n=CCNET.names[p.by];if(n)return n}return _nmOfW(p)};
 // ---- standalone web build extras ----
 const _odW=onlineDraw;onlineDraw=function(){_odW();if(!NET.room||!window.CCNET)return;
