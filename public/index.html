@@ -1559,14 +1559,14 @@ const HFX=document.createElement('canvas'),HFC=HFX.getContext('2d');
 const _dF21=drawF2;
 drawF2=function(p){const last=p._ld==null?p.d:p._ld;if(p.d>last+.5)p.hft=t;if(p.d<last)p.hft=-99;p._ld=p.d;
  const age=t-(p.hft==null?-99:p.hft);if(age<0||age>14||p.dead||st=='menu')return _dF21(p);
- const a=(1-age/14)*(age<4?.85:(age>>1)%2?.65:.35),col=dmgCol(p.d),di=X.drawImage;
+ const a=(1-age/14)*(age<3?.38:(age>>1)%2?.26:.12),col=dmgCol(p.d),di=X.drawImage;
  X.drawImage=function(img,...r){di.call(X,img,...r);if(r.length!==8)return;const[sx,sy,sw,sh,dx,dy,dw,dh]=r;if(sw<4||sh<4)return;
   if(HFX.width<sw||HFX.height<sh){HFX.width=Math.max(HFX.width,Math.ceil(sw));HFX.height=Math.max(HFX.height,Math.ceil(sh))}
   HFC.globalCompositeOperation='copy';HFC.drawImage(img,sx,sy,sw,sh,0,0,sw,sh);HFC.globalCompositeOperation='source-atop';HFC.fillStyle='rgba('+col+','+a+')';HFC.fillRect(0,0,sw,sh);
   di.call(X,HFX,0,0,sw,sh,dx,dy,dw,dh)};
  try{_dF21(p)}finally{X.drawImage=di;delete X.drawImage}
  // ring burst around the body in the damage colour
- if(age<10){X.save();X.globalAlpha=(1-age/10)*.8;X.strokeStyle='rgb('+col+')';X.lineWidth=3;X.beginPath();X.ellipse(p.x,p.y-40,24+age*3,34+age*3,0,0,7);X.stroke();X.restore()}};
+ if(age<8){X.save();X.globalAlpha=(1-age/8)*.35;X.strokeStyle='rgb('+col+')';X.lineWidth=2;X.beginPath();X.ellipse(p.x,p.y-40,24+age*3,34+age*3,0,0,7);X.stroke();X.restore()}};
 
 
 const _nmOfW=nameOf;nameOf=function(p){if(window.CCNET&&p){if(p.isMe||p.by===CCNET.id)return CCNET.user.name();const n=CCNET.names[p.by];if(n)return n}return _nmOfW(p)};
