@@ -1,0 +1,36 @@
+name: Deploy to Firebase
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Firebase settings
+        id: cfg
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          if [ -z "$SA" ] || [ -z "$PID" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT secret or FIREBASE_PROJECT_ID variable not set yet - skipping deploy."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v4
+        if: steps.cfg.outputs.ready == 'true'
+        with:
+          node-version: 20
+      - name: Deploy game + database rules
+        if: steps.cfg.outputs.ready == 'true'
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          echo "$FIREBASE_SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@13 deploy --only hosting,database --project "$PROJECT_ID" --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"

@@ -1,5 +1,5 @@
 // Connects the game to the Celeb Clash server for online matches and the leaderboard.
-(()=>{const cfg=window.CC_SERVER||((location.protocol=='https:'?'wss://':'ws://')+location.host+'/ws');
+(()=>{if(window.CC_FIREBASE===true||/\.web\.app$|\.firebaseapp\.com$/.test(location.hostname))return;const cfg=window.CC_SERVER||((location.protocol=='https:'?'wss://':'ws://')+location.host+'/ws');
  if(!/^wss?:\/\//.test(cfg)||location.protocol=='file:'&&!window.CC_SERVER){return}
  let ls;try{ls=window.localStorage}catch(e){}const g=k=>{try{return ls&&ls.getItem(k)}catch(e){return null}},s=(k,v)=>{try{ls&&ls.setItem(k,v)}catch(e){}};
  let id=g('cc_uid');if(!id){id='u'+Math.random().toString(36).slice(2,12);s('cc_uid',id)}

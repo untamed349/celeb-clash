@@ -30,6 +30,21 @@ needs a small outside database. Upstash Redis has a free plan that is plenty for
    those values, and save. Render redeploys automatically.
 4. The deploy log should say `leaderboard: Upstash`. From then on, scores survive every push.
 
+## Host on Firebase (online play and leaderboard included, no server needed)
+On Firebase the game uses Firebase Realtime Database for online matches and the leaderboard,
+so Render is not needed. Every push to `main` deploys automatically once steps 1-5 are done.
+1. console.firebase.google.com: **Add project** (Google Analytics optional).
+2. **Build > Authentication > Get started > Sign-in method > Anonymous > Enable**.
+3. **Build > Realtime Database > Create database** (any location, start in locked mode; the rules in
+   `database.rules.json` are deployed for you).
+4. Google Cloud console (console.cloud.google.com, same project): **IAM & Admin > Service accounts >
+   Create service account**, role **Firebase Admin**, then **Keys > Add key > JSON** and download it.
+5. GitHub repo **Settings > Secrets and variables > Actions**:
+   - **Secrets** tab: new secret `FIREBASE_SERVICE_ACCOUNT` = the whole JSON file's contents.
+   - **Variables** tab: new variable `FIREBASE_PROJECT_ID` = your project ID.
+6. GitHub **Actions** tab > **Deploy to Firebase** > **Run workflow** (or just push).
+   The game is then live at `https://<project-id>.web.app`.
+
 ## Option B — itch.io page + the game server
 1. Deploy the server as in Option A and note its address, e.g. `https://celeb-clash.onrender.com`.
 2. Edit `public/config.js` and set:
